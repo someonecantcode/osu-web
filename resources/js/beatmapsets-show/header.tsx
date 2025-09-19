@@ -229,21 +229,14 @@ export default class Header extends React.Component<Props> {
     toggleFavourite(this.controller.beatmapset);
   };
 
-  @action
+ @action
   private readonly onEnterFavouriteIcon = () => {
-    if (this.filteredFavourites.length < 1) {
-      if (this.favouritePopupDisposer != null) {
-        this.favouritePopupDisposer();
-        $(this.favouriteIconRef.current ?? []).qtip('destroy', true);
-      }
-
-      return;
-    }
-
+    const favtitle = this.controller.beatmapset.favourite_count > 0 ? trans('beatmapsets.show.stats.favourites') : trans('beatmapsets.show.stats.no_favourites');
     this.favouritePopupDisposer ??= createTooltip(
       () => this.favouriteIconRef.current,
       () => ({
         count: this.controller.beatmapset.favourite_count,
+        title: favtitle,
         users: this.filteredFavourites,
       }),
       'right center',
