@@ -73,12 +73,34 @@ class EventTest extends TestCase
             'approved' => 1,
         ]);
 
-        $event = Event::generate('beatmapsetDelete', ['beatmapset' => $beatmapset, 'user' => $user]);
+        $event = Event::generate('beatmapsetGraveyard', ['beatmapset' => $beatmapset, 'user' => $user]);
 
-        $this->assertSame('<a href=\'/beatmapsets/333\'>artist &amp; artist - &lt; title &gt;</a> has been deleted.', $event->text);
+        $this->assertSame('<a href=\'/beatmapsets/333\'>artist &amp; artist - &lt; title &gt;</a> has been graveyarded.', $event->text);
 
         $this->assertArrayNotHasKey('parse_error', $event->parse()->details);
-        $this->assertSame('beatmapsetDelete', $event->type);
+        $this->assertSame('beatmapsetGraveyard', $event->type);
+    }
+
+    public function testBeatmapsetGraveyardEventEscaping()
+    {
+        $user = User::factory()->create([
+            'user_id' => 222,
+            'username' => 'john123',
+        ]);
+        $beatmapset = BeatmapSet::factory()->create([
+            'beatmapset_id' => 333,
+            'user_id' => $user->getKey(),
+            'artist' => 'artist & artist',
+            'title' => '< title >',
+            'approved' => 1,
+        ]);
+
+        $event = Event::generate('beatmapsetGraveyard', ['beatmapset' => $beatmapset, 'user' => $user]);
+
+        $this->assertSame('<a href=\'/beatmapsets/333\'>artist &amp; artist - &lt; title &gt;</a> has been graveyarded.', $event->text);
+
+        $this->assertArrayNotHasKey('parse_error', $event->parse()->details);
+        $this->assertSame('beatmapsetGraveyard', $event->type);
     }
 
     public function testBeatmapsetReviveEventEscaping()
