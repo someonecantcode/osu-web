@@ -35,11 +35,10 @@ class RankingController extends Controller
     const TYPES = [
         'global',
         'country',
+        'top_plays',
         'team',
-        'multiplayer',
+        'playlists',
         'daily_challenge',
-        'seasons',
-        'charts',
         'kudosu',
     ];
 
@@ -54,10 +53,6 @@ class RankingController extends Controller
         array $params,
     ): string {
         return match ($params['type']) {
-            'charts' => route('rankings', [
-                'mode' => $params['mode'] ?? default_mode(),
-                'type' => $params['type'],
-            ]),
             'country' => route('rankings', [
                 'mode' => $params['mode'] ?? default_mode(),
                 'type' => $params['type'],
@@ -69,13 +64,20 @@ class RankingController extends Controller
                 'type' => $params['type'],
             ]),
             'kudosu' => route('rankings.kudosu'),
-            'multiplayer' => route('multiplayer.rooms.show', ['room' => 'latest']),
-            'seasons' => route('seasons.show', ['season' => 'latest']),
+            'playlists' => match ($params['list'] ?? 'seasons') {
+                'charts' => route('rankings', [
+                    'mode' => $params['mode'] ?? default_mode(),
+                    'type' => 'charts',
+                ]),
+                'featured' => route('multiplayer.rooms.show', ['room' => 'latest']),
+                'seasons' => route('seasons.show', ['season' => 'latest']),
+            },
             'team' => route('rankings', [
                 'mode' => $params['mode'] ?? default_mode(),
                 'type' => $params['type'],
                 'sort' => $params['sort'] ?? null,
             ]),
+            'top_plays' => route('rankings.top-plays', ['mode' => $params['mode'] ?? default_mode()]),
         };
     }
 
@@ -396,7 +398,11 @@ class RankingController extends Controller
 
                 $maxResults = static::MAX_RESULTS;
 
-                // use slower row count as there's no statistics entry for variants
+                if ($countryStats === null) {
+                    return $maxResults;
+                }
+
+                // use slower row count as there's no country statistics entry for variants
                 if ($params['variant'] !== null) {
                     sort($params);
                     $cacheKey = 'ranking_count:'.json_encode($params);
@@ -409,9 +415,7 @@ class RankingController extends Controller
                     );
                 }
 
-                return $countryStats === null
-                    ? $maxResults
-                    : min($countryStats->user_count, $maxResults);
+                return min($countryStats->user_count, $maxResults);
         }
     }
 
@@ -475,6 +479,8 @@ class RankingController extends Controller
             'items' => json_collection($spotlights, $selectOptionTransformer),
             'type' => 'spotlight',
         ];
+        $params['list'] = 'charts';
+        $params['type'] = 'playlists';
 
         return ext_view(
             'rankings.charts',
